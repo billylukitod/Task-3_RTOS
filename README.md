@@ -4,3 +4,9 @@
 - **Billy Lukito Danuharja (3222600027)**
 
 # Task 3 - Priority Task RTOS
+
+## Deskripsi Projek
+
+## Foto Hardware
+
+## Short Video Hardware
