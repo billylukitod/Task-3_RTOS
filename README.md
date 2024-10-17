@@ -3,33 +3,62 @@
 - **Diva Sakananda (3222600013)**
 - **Billy Lukito Danuharja (3222600027)**
 
-# Task 3 - Priority Task RTOS
+# Task 3 - Preemptive Scheduling
 
 ## Deskripsi Projek
-Dalam scheduling preemptive dengan prioritas, tugas dengan prioritas lebih tinggi akan mengambil alih tugas dengan prioritas lebih rendah yang sedang berjalan. Ketika tugas dengan prioritas lebih tinggi siap dijalankan, scheduler akan menangguhkan tugas dengan prioritas lebih rendah dan menjalankan tugas prioritas lebih tinggi. Dalam sesi praktik ini, kita mengontrol 4 LED yang terhubung ke pin STM32 A3, A4, A5, dan A6, dengan resistor yang terhubung ke ground.
+# Preemptive Scheduling dengan RTOS pada STM32
 
-1. Pengaturan Prioritas
-FlashRedLedTask, yang bertanggung jawab untuk menyalakan LED selama 0,5 detik menggunakan fungsi FlashRedLed(), diberi prioritas lebih tinggi dibandingkan dengan FlashGreenLedTask, yang menyalakan LED selama 4 detik menggunakan fungsi FlashGreenLed(). Karena scheduling preemptive, kapan pun tugas prioritas lebih tinggi siap dijalankan, tugas prioritas lebih rendah yang sedang berjalan akan ditangguhkan sampai tugas prioritas lebih tinggi selesai atau tertunda.
-Sebagai contoh, dalam proyek ini terdapat tugas-tugas berikut:
+Proyek ini mendemonstrasikan konsep preemptive scheduling menggunakan RTOS (Real-Time Operating System) pada mikrokontroler STM32. Kami mengontrol empat LED yang terhubung ke pin PA8, PA9, PA10, dan PA11 pada STM32, dengan detail berikut:
 
-- FlashRedLedTask (prioritas di atas normal)
-- FlashGreenLedTask (prioritas normal)
+- **PA8**: LED Hijau
+- **PA9**: LED Biru (Indikator untuk tugas LED Hijau)
+- **PA10**: LED Merah
+- **PA11**: LED Oranye (Indikator untuk tugas LED Merah)
 
-Dalam situasi di mana kedua tugas siap dijalankan, RTOS akan menjalankan FlashRedLedTask terlebih dahulu. Jika FlashGreenLedTask sedang berjalan, tugas tersebut hanya akan melanjutkan eksekusinya setelah FlashRedLedTask selesai atau tertunda (misalnya, menggunakan osDelay). Diagram waktu yang diharapkan akan menunjukkan bahwa LED merah berkedip lebih sering atau memiliki prioritas lebih tinggi dibandingkan LED hijau ketika keduanya siap dijalankan.
+RTOS digunakan untuk membuat dua task dengan prioritas berbeda:
 
+- `LedRedTask`: Bertanggung jawab untuk mengedipkan LED merah dan oranye dengan prioritas High.
+- `LedGreenTask`: Bertanggung jawab untuk mengedipkan LED hijau dan biru dengan prioritas Normal.
 
-2. Scheduling Preemptive
-Scheduling preemptive memungkinkan tugas dengan prioritas lebih tinggi untuk menginterupsi tugas dengan prioritas lebih rendah kapan pun tugas dengan prioritas lebih tinggi siap dijalankan, memastikan bahwa tugas-tugas kritis ditangani dengan cepat. Dalam sistem waktu nyata seperti ini, tugas-tugas yang terkait dengan operasi real-time, seperti kedipan LED yang lebih cepat, harus diberi prioritas lebih tinggi.
+## Gambaran Proyek
 
-- Ketika FlashRedLedTask siap, ia akan menginterupsi FlashGreenLedTask yang sedang berjalan.
-- FlashGreenLedTask hanya akan melanjutkan setelah FlashRedLedTask selesai atau ditangguhkan.
+Proyek ini mengimplementasikan mekanisme preemptive scheduling di mana task-task diberi prioritas yang berbeda. Preemptive scheduling memungkinkan task dengan prioritas lebih tinggi untuk menginterupsi dan mengambil alih CPU dari task prioritas lebih rendah ketika task prioritas tinggi siap dijalankan.
 
-## Hasil Ketika Diunggah ke Board STM32
+### Deskripsi Task
 
-Tugas dengan prioritas lebih tinggi (misalnya, FlashRedLedTask) akan mendapatkan waktu CPU lebih sering dibandingkan dengan tugas dengan prioritas lebih rendah.
-Jika tugas dengan prioritas lebih rendah (misalnya, FlashGreenLedTask) sedang berjalan, tugas tersebut akan terinterupsi saat tugas dengan prioritas lebih tinggi siap dijalankan.
-Pergantian tugas akan ditangani secara otomatis oleh scheduler RTOS tanpa intervensi langsung dari program utama.
-Perilaku yang dapat diamati termasuk satu LED (kemungkinan LED merah) berkedip lebih sering atau secara terus-menerus, sementara LED lainnya (hijau) tampak tertunda atau tidak berkedip, menandakan bahwa tugas yang bertanggung jawab untuk menyalakannya telah ditangguhkan oleh tugas dengan prioritas lebih tinggi.
+1. **LedRedTask (Prioritas Tinggi)**
+   - **Pin yang digunakan**: PA10 (LED Merah) dan PA11 (LED Oranye - indikator)
+   - **Eksekusi**: Mengedipkan LED merah selama 0,5 detik (frekuensi 20 Hz) dan kemudian berhenti selama 1,5 detik. LED oranye (indikator) dinyalakan saat LED merah berkedip dan dimatikan setelahnya.
+   - **Prioritas**: Tinggi
+
+2. **LedGreenTask (Prioritas Normal)**
+   - **Pin yang digunakan**: PA8 (LED Hijau) dan PA9 (LED Biru - indikator)
+   - **Eksekusi**: Mengedipkan LED hijau selama 4 detik (frekuensi 20 Hz) dan kemudian berhenti selama 6 detik. LED biru (indikator) dinyalakan saat LED hijau berkedip dan dimatikan setelahnya.
+   - **Prioritas**: Normal
+
+### Preemptive Scheduling
+
+RTOS menggunakan strategi preemptive scheduling untuk menangani eksekusi task. Preemptive scheduling memastikan CPU selalu diberikan kepada task dengan prioritas tertinggi yang siap untuk berjalan. Jika task dengan prioritas lebih tinggi menjadi siap sementara task prioritas lebih rendah sedang berjalan, RTOS akan menangguhkan task prioritas lebih rendah dan memberikan kontrol kepada task prioritas lebih tinggi.
+
+### Contoh pada proyek ini:
+- **LedRedTask** diberi prioritas lebih tinggi dibandingkan dengan **LedGreenTask**.
+- Ketika kedua task siap, scheduler RTOS akan mengeksekusi **LedRedTask** terlebih dahulu. **LedGreenTask** akan diinterupsi (preempted) dan hanya akan dilanjutkan setelah **LedRedTask** selesai dieksekusi atau masuk ke dalam status delay.
+  
+### Perilaku Waktu:
+- **LedRedTask** (dengan prioritas lebih tinggi) mengedipkan LED merah lebih sering, mengambil alih dari **LedGreenTask**. Hal ini terlihat ketika LED hijau tampak tertunda atau ditangguhkan ketika task LED merah sedang berjalan.
+
+### Detail Scheduling Task
+
+- **LedRedTask** menggunakan fungsi `osDelay(1500)` untuk menunda eksekusi selama 1,5 detik setelah menyelesaikan pengedipan LED selama 0,5 detik.
+- **LedGreenTask** menggunakan fungsi `osDelay(6000)` untuk menunda eksekusi selama 6 detik setelah menyelesaikan pengedipan LED selama 4 detik.
+
+Dalam lingkungan preemptive scheduling, ketika **LedRedTask** siap untuk dijalankan, task tersebut akan menginterupsi **LedGreenTask** dan mengambil alih CPU. Setelah **LedRedTask** menyelesaikan eksekusinya atau masuk ke status penundaan, **LedGreenTask** dapat dilanjutkan.
+Karena LedRedTask memiliki prioritas lebih tinggi, ketika LedGreenTask dan LedRedTask keduanya siap, LedRedTask akan menginterupsi LedGreenTask dan mengambil alih CPU. LedGreenTask hanya akan berjalan kembali setelah LedRedTask selesai atau masuk ke status penundaan.
+
+### Pengamatan
+LedRedTask akan mengedipkan LED merah lebih sering karena memiliki prioritas lebih tinggi.
+LedGreenTask hanya akan berjalan ketika LedRedTask tidak aktif, menyebabkan pengedipan LED hijau tampak tertunda ketika task LED merah sedang berjalan.
+LED indikator (biru dan oranye) menunjukkan saat masing-masing task sedang aktif berjalan.
 
 
 ## Foto Hardware
